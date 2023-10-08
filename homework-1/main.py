@@ -4,38 +4,36 @@ import psycopg2
 import csv
 
 
-def executing_sql(query):
-
-    """ Функция для установления соединения и выполнения запросов. """
-
-    conn = psycopg2.connect(host="localhost", port="5432", database="north", user="postgres")
+def execute_database_query(sql_statement):
+    """
+    Эта функция устанавливает соединение с базой данных PostgreSQL,
+    выполняет указанный SQL-запрос и закрывает соединение.
+    """
+    conn = psycopg2.connect(host="localhost", database="north", user="postgres", password="Aleksandr95!")
     try:
         with conn:
             with conn.cursor() as cur:
-                cur.execute(query)
-    finally: conn.close()
+                cur.execute(sql_statement)
+    finally:
+        conn.close()
 
 
-def filling_in_tables(name, csv_file):
-
-    """ Функция для заполнения таблиц. """
-
+def populate_table_from_csv(name_table, csv_file):
+    """
+    Заполнение таблиц данными из CSV файлов.
+    """
     with open(csv_file, "r", newline="", encoding="utf-8") as file:
         rows = csv.reader(file)
+        next(rows)
         for row in rows:
-            values = "', '".join(row)
-            query = f"INSERT INTO {name} VALUES ('{values}');"
-            executing_sql(query)
+            cleaned_values = [value.replace("'", " ") for value in row]
+            values = "', '".join(map(str, cleaned_values))
+            sql_insert_statement = f"INSERT INTO {name_table} VALUES ('{values}');"
+            execute_database_query(sql_insert_statement)
 
 
-# Заполнение таблицы employees данными
-employees_csv = "north_data/employees_data.csv"
-filling_in_tables("employees", employees_csv)
-
-# Заполнение таблицы customers данными
-customers_csv = "north_data/customers_data.csv"
-filling_in_tables("customers", customers_csv)
-
-# Заполнение таблицы orders данными
-orders_csv = "north_data/orders_data.csv"
-filling_in_tables("orders", orders_csv)
+if __name__ == "__main__":
+    # Заполнение таблиц данными
+    populate_table_from_csv("employees", "north_data/employees_data.csv")
+    populate_table_from_csv("customers", "north_data/customers_data.csv")
+    populate_table_from_csv("orders", "north_data/orders_data.csv")
